@@ -98,8 +98,6 @@ func LoadStorage(filename string) (*Storage, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			f, _ := os.Create(filename)
-			defer f.Close()
 			return &Storage{
 				NextID: 1,
 				Tasks:  []Task{},
@@ -125,12 +123,15 @@ func LoadStorage(filename string) (*Storage, error) {
 // Загрузка из оперативной памяти в файл
 func (s *Storage) SaveStorage(filename string) error {
 	// O_WRONLY - только запись, O_TRUNC - обрезать данные до 0 байт, 0666 - все юзеры могут читать и писать, но не запускать
-	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_TRUNC, 0666)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	err = json.NewEncoder(file).Encode(s)
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "   ")
+
+	err = encoder.Encode(s)
 	if err != nil {
 		return err
 	}
